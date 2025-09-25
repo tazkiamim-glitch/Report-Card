@@ -135,6 +135,15 @@ const subjectsData: Record<string, SubjectData> = {
   },
 }
 
+// Demo leaderboard data
+const leaderboardData: Array<{ name: string; percent: number; avatar?: string }> = [
+  { name: "Larry Brown", percent: 98, avatar: "/student-avatar.png" },
+  { name: "Rona Free", percent: 97, avatar: "/student-avatar.png" },
+  { name: "Phil Gill", percent: 96, avatar: "/student-avatar.png" },
+  { name: "Angona", percent: 95, avatar: "/student-avatar.png" },
+  { name: "Greg Morrison", percent: 94, avatar: "/student-avatar.png" },
+]
+
 export default function StudentReportCard() {
   const [currentScreen, setCurrentScreen] = useState<"main" | "detail">("main")
   const [selectedSubject, setSelectedSubject] = useState<string>("")
@@ -180,6 +189,20 @@ export default function StudentReportCard() {
       Biology: "bg-green-100 text-green-600",
     }
     return colors[subject as keyof typeof colors] || "bg-gray-100 text-gray-600"
+  }
+
+  const MedalIcon = ({ rank }: { rank: number }) => {
+    if (rank > 3) {
+      return (
+        <div className="w-12 h-12 flex items-center justify-center text-[16px] font-bold text-gray-600">{rank}</div>
+      )
+    }
+    const srcMap: Record<number, string> = {
+      1: "/first-rank-badge.webp",
+      2: "/second-rank-badge.webp",
+      3: "/3rd%20place.png",
+    }
+    return <img src={srcMap[rank]} alt={`Rank ${rank}`} className="w-12 h-12 object-contain shrink-0" />
   }
 
   return (
@@ -350,6 +373,38 @@ export default function StudentReportCard() {
           <section className="mt-8">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Performance Trend</h2>
             <PerformanceChart />
+          </section>
+
+          {/* Leaderboard */}
+          <section className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Leaderboard</h2>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm divide-y divide-gray-100">
+              {leaderboardData.map((item, index) => (
+                <div
+                  key={item.name}
+                  className={`flex items-center justify-between p-3 ${
+                    index === 0
+                      ? "bg-gradient-to-r from-purple-50/80 to-purple-100/60"
+                      : index === 1
+                      ? "bg-gradient-to-r from-indigo-50/80 to-indigo-100/60"
+                      : index === 2
+                      ? "bg-gradient-to-r from-pink-50/80 to-pink-100/60"
+                      : "bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <MedalIcon rank={index + 1} />
+                    <img
+                      src={item.avatar || "/student-avatar.png"}
+                      alt={item.name}
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                    />
+                    <span className="font-semibold text-gray-800">{item.name}</span>
+                  </div>
+                  <span className="text-[#48319d] font-bold">{item.percent}%</span>
+                </div>
+              ))}
+            </div>
           </section>
         </main>
       </div>
