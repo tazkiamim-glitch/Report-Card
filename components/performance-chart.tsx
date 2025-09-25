@@ -4,7 +4,16 @@ import { useState } from "react"
 import { Area, CartesianGrid, Line, ComposedChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { curveCardinal } from "victory-vendor/d3-shape"
 
-const chartData = {
+type ChartPoint = { month: string; value: number }
+type Series = { data: ChartPoint[]; color: string }
+export type PerformanceChartData = {
+  labels: string[]
+  attendance: Series
+  mcq: Series
+  cq: Series
+}
+
+const defaultChartData: PerformanceChartData = {
   labels: ["Jan", "Feb", "Mar"],
   attendance: {
     data: [
@@ -32,8 +41,9 @@ const chartData = {
   },
 }
 
-export function PerformanceChart() {
+export function PerformanceChart({ data }: { data?: PerformanceChartData }) {
   const [activeChart, setActiveChart] = useState<"attendance" | "mcq" | "cq">("attendance")
+  const chartData = data || defaultChartData
 
   return (
     <div>

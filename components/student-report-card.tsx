@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, ArrowLeft, ChevronDown, Info, FileText, CheckCircle2 } from "lucide-react"
 import { PerformanceChart } from "./performance-chart"
+import type { PerformanceChartData } from "./performance-chart"
 import { ProgressRing } from "./progress-ring"
 import { Button } from "./ui/button"
 import SubjectDetail, { SubjectData } from "./subject-detail"
@@ -184,6 +185,109 @@ const subjectsData: Record<string, SubjectData> = {
   },
 }
 
+// Quarter-wise summary + chart data
+const quarterCharts: Record<1 | 2 | 3, PerformanceChartData> = {
+  1: {
+    labels: ["Jan", "Feb", "Mar"],
+    attendance: {
+      data: [
+        { month: "Jan", value: 15 },
+        { month: "Feb", value: 38 },
+        { month: "Mar", value: 58 },
+      ],
+      color: "#6B49CD",
+    },
+    mcq: {
+      data: [
+        { month: "Jan", value: 45 },
+        { month: "Feb", value: 55 },
+        { month: "Mar", value: 50 },
+      ],
+      color: "#FFC94A",
+    },
+    cq: {
+      data: [
+        { month: "Jan", value: 30 },
+        { month: "Feb", value: 42 },
+        { month: "Mar", value: 63 },
+      ],
+      color: "#2ECC71",
+    },
+  },
+  2: {
+    labels: ["Apr", "May", "Jun"],
+    attendance: {
+      data: [
+        { month: "Apr", value: 60 },
+        { month: "May", value: 68 },
+        { month: "Jun", value: 75 },
+      ],
+      color: "#6B49CD",
+    },
+    mcq: {
+      data: [
+        { month: "Apr", value: 50 },
+        { month: "May", value: 62 },
+        { month: "Jun", value: 65 },
+      ],
+      color: "#FFC94A",
+    },
+    cq: {
+      data: [
+        { month: "Apr", value: 55 },
+        { month: "May", value: 60 },
+        { month: "Jun", value: 70 },
+      ],
+      color: "#2ECC71",
+    },
+  },
+  3: {
+    labels: ["Jul", "Aug", "Sep"],
+    attendance: {
+      data: [
+        { month: "Jul", value: 72 },
+        { month: "Aug", value: 78 },
+        { month: "Sep", value: 84 },
+      ],
+      color: "#6B49CD",
+    },
+    mcq: {
+      data: [
+        { month: "Jul", value: 66 },
+        { month: "Aug", value: 70 },
+        { month: "Sep", value: 72 },
+      ],
+      color: "#FFC94A",
+    },
+    cq: {
+      data: [
+        { month: "Jul", value: 68 },
+        { month: "Aug", value: 74 },
+        { month: "Sep", value: 80 },
+      ],
+      color: "#2ECC71",
+    },
+  },
+}
+
+const quarterSummary = {
+  1: {
+    totalScore: 90,
+    rank: { position: 10, total: 500 },
+    learning: { attendance: 85, mcq: 72, cq: 68 },
+  },
+  2: {
+    totalScore: 92,
+    rank: { position: 7, total: 500 },
+    learning: { attendance: 88, mcq: 76, cq: 72 },
+  },
+  3: {
+    totalScore: 88,
+    rank: { position: 12, total: 500 },
+    learning: { attendance: 82, mcq: 70, cq: 75 },
+  },
+} as const
+
 // Demo leaderboard data
 const leaderboardData: Array<{ name: string; percent: number; avatar?: string }> = [
   { name: "Larry Brown", percent: 98, avatar: "/student-avatar.png" },
@@ -191,6 +295,11 @@ const leaderboardData: Array<{ name: string; percent: number; avatar?: string }>
   { name: "Phil Gill", percent: 96, avatar: "/student-avatar.png" },
   { name: "Angona", percent: 95, avatar: "/student-avatar.png" },
   { name: "Greg Morrison", percent: 94, avatar: "/student-avatar.png" },
+  { name: "Sadia Rahman", percent: 93, avatar: "/student-avatar.png" },
+  { name: "Nayan Chowdhury", percent: 92, avatar: "/student-avatar.png" },
+  { name: "Mehedi Hasan", percent: 91, avatar: "/student-avatar.png" },
+  { name: "Arif Hossain", percent: 90, avatar: "/student-avatar.png" },
+  { name: "Tania Akter", percent: 89, avatar: "/student-avatar.png" },
 ]
 
 export default function StudentReportCard() {
@@ -198,6 +307,9 @@ export default function StudentReportCard() {
   const [selectedSubject, setSelectedSubject] = useState<string>("")
   const [selectedChapter, setSelectedChapter] = useState<string>("")
   const [showAllSubjects, setShowAllSubjects] = useState<boolean>(false)
+  const [activeTab, setActiveTab] = useState<"summary" | "leaderboard">("summary")
+  const [quarter, setQuarter] = useState<1 | 2 | 3>(1)
+  const [quarterLabelSlide, setQuarterLabelSlide] = useState<"left" | "right" | null>(null)
   const extraSubjectsRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -277,9 +389,35 @@ export default function StudentReportCard() {
               <div className="flex items-center gap-3">
                 <h1 className="text-xl font-semibold">Angona</h1>
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <ChevronLeft className="w-3.5 h-3.5 opacity-80 cursor-pointer" />
-                  <span>Q1</span>
-                  <ChevronRight className="w-3.5 h-3.5 opacity-80 cursor-pointer" />
+                  <ChevronLeft
+                    className={`w-3.5 h-3.5 ${quarter === 1 ? "opacity-30 cursor-not-allowed" : "opacity-80 cursor-pointer"}`}
+                    onClick={() => {
+                      if (quarter === 1) return
+                      setQuarterLabelSlide("right")
+                      setQuarter((q) => (q > 1 ? ((q - 1) as 1 | 2 | 3) : q))
+                      setTimeout(() => setQuarterLabelSlide(null), 250)
+                    }}
+                  />
+                  <span
+                    className={`min-w-[88px] text-center transition-transform duration-300 ${
+                      quarterLabelSlide === "left"
+                        ? "-translate-x-2"
+                        : quarterLabelSlide === "right"
+                        ? "translate-x-2"
+                        : "translate-x-0"
+                    }`}
+                  >
+                    {`Quarter ${quarter}`}
+                  </span>
+                  <ChevronRight
+                    className={`w-3.5 h-3.5 ${quarter === 3 ? "opacity-30 cursor-not-allowed" : "opacity-80 cursor-pointer"}`}
+                    onClick={() => {
+                      if (quarter === 3) return
+                      setQuarterLabelSlide("left")
+                      setQuarter((q) => (q < 3 ? ((q + 1) as 1 | 2 | 3) : q))
+                      setTimeout(() => setQuarterLabelSlide(null), 250)
+                    }}
+                  />
                 </div>
               </div>
               <p className="text-xs opacity-80 mt-0.5">HSC 2022</p>
@@ -289,149 +427,149 @@ export default function StudentReportCard() {
 
         {/* Main Content */}
         <main className="bg-slate-50 rounded-t-[32px] -mt-6 relative z-10 px-6 pb-6 overflow-y-auto h-[calc(100%-140px)]">
-          {/* Your Progress */}
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Progress</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gradient-to-br from-purple-300 to-purple-500 text-white rounded-2xl p-4 min-h-[140px] flex flex-col">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs font-semibold uppercase opacity-80">Total Score</span>
-                  <div className="flex items-center gap-2">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24">
-                      <rect x="4" y="11" width="4" height="9" rx="2" fill="#7ba0ff" />
-                      <rect x="10" y="5" width="4" height="15" rx="2" fill="#FFFFFF" />
-                      <rect x="16" y="15" width="4" height="5" rx="2" fill="#ffc94a" />
-                    </svg>
-                    <Info className="w-4 h-4 bg-black/15 rounded-full p-0.5" />
-                  </div>
-                </div>
-                <div className="text-4xl font-bold flex-1 flex items-center">90%</div>
-              </div>
-              <div className="bg-gradient-to-br from-blue-300 to-blue-500 text-white rounded-2xl p-4 min-h-[140px] flex flex-col">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs font-semibold uppercase opacity-80">Class Rank</span>
-                  <div className="flex items-center gap-2">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24">
-                      <rect x="4" y="11" width="4" height="9" rx="2" fill="#FFFFFF" opacity="0.8" />
-                      <rect x="10" y="5" width="4" height="15" rx="2" fill="#ff7b7b" />
-                      <rect x="16" y="15" width="4" height="5" rx="2" fill="#FFFFFF" opacity="0.8" />
-                    </svg>
-                    <Info className="w-4 h-4 bg-black/15 rounded-full p-0.5" />
-                  </div>
-                </div>
-                <div className="text-4xl font-bold flex-1 flex items-center">
-                  10<span className="text-lg font-medium opacity-80 ml-0.5">/500</span>
-                </div>
-              </div>
+          {/* Tabs Navigation */}
+          <div className="pt-4">
+            <div className="flex border-b border-gray-200">
+              <button
+                type="button"
+                onClick={() => setActiveTab("summary")}
+                className={`flex-1 py-3 text-sm text-center transition-colors ${
+                  activeTab === "summary"
+                    ? "text-purple-700 font-semibold border-b-2 border-purple-500"
+                    : "text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
+                }`}
+              >
+                Result Summary
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("leaderboard")}
+                className={`flex-1 py-3 text-sm text-center transition-colors ${
+                  activeTab === "leaderboard"
+                    ? "text-purple-700 font-semibold border-b-2 border-purple-500"
+                    : "text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
+                }`}
+              >
+                Leaderboard
+              </button>
             </div>
-          </section>
+          </div>
 
-          {/* Subject-wise Performance - moved below Learning Stats via new section below */}
-
-          {/* Learning Stats */}
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Learning Stats</h2>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                  <svg viewBox="0 0 64 64" className="w-full h-full">
-                    <path
-                      d="M49,34.86c0-1,0-1.92.06-2.86H32.17a3.83,3.83,0,0,0-3.83,3.83v8.34a3.84,3.84,0,0,0,3.83,3.83H45.17L52,50V38.69A3.83,3.83,0,0,0,49,34.86Z"
-                      fill="#d9c8fb"
-                    />
-                    <path
-                      d="M43.14,14a4.8,4.8,0,0,0-4.79,4.79V29.7a4.8,4.8,0,0,0,4.79,4.8H52.4L60,40V24.33a4.8,4.8,0,0,0-4.79-4.8H50.42v-0.75a4.8,4.8,0,0,0-4.79-4.79Z"
-                      fill="#A076F9"
-                    />
-                  </svg>
-                </div>
-                <div className="text-xs text-gray-500 mb-1 leading-tight"><div>Live Class</div><div>Attendance</div></div>
-                <div className="text-xl font-bold text-purple-500">85%</div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                  <svg viewBox="0 0 64 64" className="w-full h-full">
-                    <circle cx="32" cy="32" r="24" fill="#FFC94A" />
-                    <path
-                      d="M32.5,14V34.25a1,1,0,0,1-1.4.9L22,30"
-                      fill="none"
-                      stroke="#fff"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="4"
-                    />
-                  </svg>
-                </div>
-                <div className="text-xs text-gray-500 mb-1 leading-tight"><div>Live MCQ</div><div>Score %</div></div>
-                <div className="text-xl font-bold text-yellow-500">72%</div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                  <svg viewBox="0 0 64 64" className="w-full h-full">
-                    <circle cx="32" cy="32" r="24" fill="#2ECC71" />
-                    <path
-                      d="M22,32l8,8L42,26"
-                      fill="none"
-                      stroke="#fff"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="5"
-                    />
-                  </svg>
-                </div>
-                <div className="text-xs text-gray-500 mb-1 leading-tight"><div>Live CQ</div><div>Score %</div></div>
-                <div className="text-xl font-bold text-green-500">68%</div>
-              </div>
-            </div>
-          </section>
-
-          {/* Subject-wise Performance (after Learning Stats) */}
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Subject-wise Performance</h2>
-            <div className="space-y-0">
-              <div className="grid grid-cols-[1.7fr_1fr_1fr] gap-4 text-xs font-medium text-gray-500 pb-3">
-                <span className="text-left">Subject</span>
-                <span className="text-center whitespace-nowrap">Your Score</span>
-                <span className="text-center whitespace-nowrap">Topper's Score</span>
-              </div>
-              {(() => {
-                const entries = Object.entries(subjectsData)
-                const first = entries.slice(0, 4)
-                const rest = entries.slice(4)
-                return (
-                  <div>
-                    {first.map(([subject, data]) => (
-                      <div
-                        key={subject}
-                        className="relative grid grid-cols-[1.7fr_1fr_1fr] gap-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 -mx-2 px-2 pr-7 rounded"
-                        onClick={() => handleSubjectClick(subject)}
-                      >
-                        <div className="flex items-center min-w-0">
-                          <div className="relative mr-3">
-                            {data.score === data.topperScore && (
-                              <span className="absolute -top-3 -left-1 px-2 py-0.5 rounded bg-[#ffc94a] text-white text-[10px] font-semibold shadow-sm">Topper</span>
-                            )}
-                            <div
-                              className={`w-8 h-8 rounded-lg ${getSubjectIcon(subject)} flex items-center justify-center text-sm font-bold`}
-                            >
-                              {subject[0]}
-                            </div>
-                          </div>
-                          <span className="font-semibold text-gray-800 text-[13px] whitespace-nowrap">{subject}</span>
-                        </div>
-                        <span className="text-center font-semibold text-[#48319d]">{data.score}%</span>
-                        <span className="text-center font-semibold text-[#ffc94a]">{data.topperScore}%</span>
-                        <svg className="w-4 h-4 text-gray-300 absolute right-2 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          {activeTab === "summary" && (
+            <>
+              {/* Your Progress */}
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Progress</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-purple-300 to-purple-500 text-white rounded-2xl p-4 min-h-[140px] flex flex-col">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-semibold uppercase opacity-80">Total Score</span>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-6 h-6" viewBox="0 0 24 24">
+                          <rect x="4" y="11" width="4" height="9" rx="2" fill="#7ba0ff" />
+                          <rect x="10" y="5" width="4" height="15" rx="2" fill="#FFFFFF" />
+                          <rect x="16" y="15" width="4" height="5" rx="2" fill="#ffc94a" />
+                        </svg>
+                        <Info className="w-4 h-4 bg-black/15 rounded-full p-0.5" />
                       </div>
-                    ))}
+                    </div>
+                    <div className="text-4xl font-bold flex-1 flex items-center">{quarterSummary[quarter].totalScore}%</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-300 to-blue-500 text-white rounded-2xl p-4 min-h-[140px] flex flex-col">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-semibold uppercase opacity-80">Class Rank</span>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-6 h-6" viewBox="0 0 24 24">
+                          <rect x="4" y="11" width="4" height="9" rx="2" fill="#FFFFFF" opacity="0.8" />
+                          <rect x="10" y="5" width="4" height="15" rx="2" fill="#ff7b7b" />
+                          <rect x="16" y="15" width="4" height="5" rx="2" fill="#FFFFFF" opacity="0.8" />
+                        </svg>
+                        <Info className="w-4 h-4 bg-black/15 rounded-full p-0.5" />
+                      </div>
+                    </div>
+                    <div className="text-4xl font-bold flex-1 flex items-center">
+                      {quarterSummary[quarter].rank.position}
+                      <span className="text-lg font-medium opacity-80 ml-0.5">/{quarterSummary[quarter].rank.total}</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
 
-                    {rest.length > 0 && (
-                      <div
-                        ref={extraSubjectsRef}
-                        className="overflow-hidden transition-[max-height] duration-300"
-                        style={{ maxHeight: 0 }}
-                      >
-                        {rest.map(([subject, data]) => (
+              {/* Subject-wise Performance - moved below Learning Stats via new section below */}
+
+              {/* Learning Stats */}
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Learning Stats</h2>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center">
+                    <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                      <svg viewBox="0 0 64 64" className="w-full h-full">
+                        <path
+                          d="M49,34.86c0-1,0-1.92.06-2.86H32.17a3.83,3.83,0,0,0-3.83,3.83v8.34a3.84,3.84,0,0,0,3.83,3.83H45.17L52,50V38.69A3.83,3.83,0,0,0,49,34.86Z"
+                          fill="#d9c8fb"
+                        />
+                        <path
+                          d="M43.14,14a4.8,4.8,0,0,0-4.79,4.79V29.7a4.8,4.8,0,0,0,4.79,4.8H52.4L60,40V24.33a4.8,4.8,0,0,0-4.79-4.8H50.42v-0.75a4.8,4.8,0,0,0-4.79-4.79Z"
+                          fill="#A076F9"
+                        />
+                      </svg>
+                    </div>
+                    <div className="text-xs text-gray-500 mb-1 leading-tight"><div>Live Class</div><div>Attendance</div></div>
+                    <div className="text-xl font-bold text-purple-500">{quarterSummary[quarter].learning.attendance}%</div>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center">
+                    <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                      <svg viewBox="0 0 64 64" className="w-full h-full">
+                        <circle cx="32" cy="32" r="24" fill="#FFC94A" />
+                        <path
+                          d="M32.5,14V34.25a1,1,0,0,1-1.4.9L22,30"
+                          fill="none"
+                          stroke="#fff"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="4"
+                        />
+                      </svg>
+                    </div>
+                    <div className="text-xs text-gray-500 mb-1 leading-tight"><div>Live MCQ</div><div>Score %</div></div>
+                    <div className="text-xl font-bold text-yellow-500">{quarterSummary[quarter].learning.mcq}%</div>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center">
+                    <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                      <svg viewBox="0 0 64 64" className="w-full h-full">
+                        <circle cx="32" cy="32" r="24" fill="#2ECC71" />
+                        <path
+                          d="M22,32l8,8L42,26"
+                          fill="none"
+                          stroke="#fff"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="5"
+                        />
+                      </svg>
+                    </div>
+                    <div className="text-xs text-gray-500 mb-1 leading-tight"><div>Live CQ</div><div>Score %</div></div>
+                    <div className="text-xl font-bold text-green-500">{quarterSummary[quarter].learning.cq}%</div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Subject-wise Performance (after Learning Stats) */}
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Subject-wise Performance</h2>
+                <div className="space-y-0">
+                  <div className="grid grid-cols-[1.7fr_1fr_1fr] gap-4 text-xs font-medium text-gray-500 pb-3">
+                    <span className="text-left">Subject</span>
+                    <span className="text-center whitespace-nowrap">Your Score</span>
+                    <span className="text-center whitespace-nowrap">Topper's Score</span>
+                  </div>
+                  {(() => {
+                    const entries = Object.entries(subjectsData)
+                    const first = entries.slice(0, 4)
+                    const rest = entries.slice(4)
+                    return (
+                      <div>
+                        {first.map(([subject, data]) => (
                           <div
                             key={subject}
                             className="relative grid grid-cols-[1.7fr_1fr_1fr] gap-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 -mx-2 px-2 pr-7 rounded"
@@ -455,61 +593,98 @@ export default function StudentReportCard() {
                             <svg className="w-4 h-4 text-gray-300 absolute right-2 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                           </div>
                         ))}
+
+                        {rest.length > 0 && (
+                          <div
+                            ref={extraSubjectsRef}
+                            className="overflow-hidden transition-[max-height] duration-300"
+                            style={{ maxHeight: 0 }}
+                          >
+                            {rest.map(([subject, data]) => (
+                              <div
+                                key={subject}
+                                className="relative grid grid-cols-[1.7fr_1fr_1fr] gap-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 -mx-2 px-2 pr-7 rounded"
+                                onClick={() => handleSubjectClick(subject)}
+                              >
+                                <div className="flex items-center min-w-0">
+                                  <div className="relative mr-3">
+                                    {data.score === data.topperScore && (
+                                      <span className="absolute -top-3 -left-1 px-2 py-0.5 rounded bg-[#ffc94a] text-white text-[10px] font-semibold shadow-sm">Topper</span>
+                                    )}
+                                    <div
+                                      className={`w-8 h-8 rounded-lg ${getSubjectIcon(subject)} flex items-center justify-center text-sm font-bold`}
+                                    >
+                                      {subject[0]}
+                                    </div>
+                                  </div>
+                                  <span className="font-semibold text-gray-800 text-[13px] whitespace-nowrap">{subject}</span>
+                                </div>
+                                <span className="text-center font-semibold text-[#48319d]">{data.score}%</span>
+                                <span className="text-center font-semibold text-[#ffc94a]">{data.topperScore}%</span>
+                                <svg className="w-4 h-4 text-gray-300 absolute right-2 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {rest.length > 0 && (
+                          <button
+                            className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-[#48319d] mt-3"
+                            onClick={() => setShowAllSubjects(!showAllSubjects)}
+                          >
+                            {showAllSubjects ? "See Less" : "See More"}
+                            <ChevronDown className={`w-4 h-4 transition-transform ${showAllSubjects ? "rotate-180" : "rotate-0"}`} />
+                          </button>
+                        )}
                       </div>
-                    )}
-
-                    {rest.length > 0 && (
-                      <button
-                        className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-[#48319d] mt-3"
-                        onClick={() => setShowAllSubjects(!showAllSubjects)}
-                      >
-                        {showAllSubjects ? "See Less" : "See More"}
-                        <ChevronDown className={`w-4 h-4 transition-transform ${showAllSubjects ? "rotate-180" : "rotate-0"}`} />
-                      </button>
-                    )}
-                  </div>
-                )
-              })()}
-            </div>
-          </section>
-
-          {/* Performance Trend */}
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Performance Trend</h2>
-            <PerformanceChart />
-          </section>
-
-          {/* Leaderboard */}
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Leaderboard</h2>
-            <div className="rounded-2xl border border-purple-100 bg-purple-50 p-2 shadow-sm space-y-2">
-              {leaderboardData.map((item, index) => (
-                <div
-                  key={item.name}
-                  className={`flex items-center justify-between p-3 rounded-xl ${
-                    index === 0
-                      ? "bg-gradient-to-r from-purple-50/80 to-purple-100/60"
-                      : index === 1
-                      ? "bg-gradient-to-r from-indigo-50/80 to-indigo-100/60"
-                      : index === 2
-                      ? "bg-gradient-to-r from-pink-50/80 to-pink-100/60"
-                      : "bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <MedalIcon rank={index + 1} />
-                    <img
-                      src={item.avatar || "/student-avatar.png"}
-                      alt={item.name}
-                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                    />
-                    <span className="font-semibold text-gray-800">{item.name}</span>
-                  </div>
-                  <span className="text-[#48319d] font-bold">{item.percent}%</span>
+                    )
+                  })()}
                 </div>
-              ))}
-            </div>
-          </section>
+              </section>
+
+              {/* Performance Trend */}
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Performance Trend</h2>
+                <PerformanceChart data={quarterCharts[quarter]} />
+              </section>
+            </>
+          )}
+
+          {activeTab === "leaderboard" && (
+            <>
+              {/* Leaderboard */}
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Leaderboard</h2>
+                <div className="rounded-2xl border border-purple-100 bg-purple-50 p-2 shadow-sm space-y-2">
+                  {leaderboardData.map((item, index) => (
+                    <div
+                      key={item.name}
+                      className={`flex items-center justify-between p-3 rounded-xl ${
+                        index === 0
+                          ? "bg-gradient-to-r from-purple-50/80 to-purple-100/60"
+                          : index === 1
+                          ? "bg-gradient-to-r from-indigo-50/80 to-indigo-100/60"
+                          : index === 2
+                          ? "bg-gradient-to-r from-pink-50/80 to-pink-100/60"
+                          : "bg-white"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <MedalIcon rank={index + 1} />
+                        <img
+                          src={item.avatar || "/student-avatar.png"}
+                          alt={item.name}
+                          className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                        />
+                        <span className="font-semibold text-gray-800">{item.name}</span>
+                      </div>
+                      <span className="text-[#48319d] font-bold">{item.percent}%</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
         </main>
       </div>
 
