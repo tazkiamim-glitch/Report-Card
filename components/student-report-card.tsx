@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, ArrowLeft, ChevronDown, Info, FileText, CheckCircle2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, ArrowLeft, ChevronDown, Info, FileText, CheckCircle2, Calendar, XCircle, PlayCircle, RefreshCcw } from "lucide-react"
 import { PerformanceChart } from "./performance-chart"
 import type { PerformanceChartData } from "./performance-chart"
 import { ProgressRing } from "./progress-ring"
@@ -275,31 +275,41 @@ const quarterSummary = {
     totalScore: 90,
     rank: { position: 10, total: 500 },
     learning: { attendance: 85, mcq: 72, cq: 68 },
+    focus: { missedClasses: 4, incorrectMCQs: 15, recommendedVideos: 2 },
   },
   2: {
     totalScore: 92,
     rank: { position: 7, total: 500 },
     learning: { attendance: 88, mcq: 76, cq: 72 },
+    focus: { missedClasses: 4, incorrectMCQs: 15, recommendedVideos: 2 },
   },
   3: {
     totalScore: 88,
     rank: { position: 12, total: 500 },
     learning: { attendance: 82, mcq: 70, cq: 75 },
+    focus: { missedClasses: 4, incorrectMCQs: 15, recommendedVideos: 2 },
   },
 } as const
 
 // Demo leaderboard data
-const leaderboardData: Array<{ name: string; percent: number; avatar?: string }> = [
-  { name: "Larry Brown", percent: 98, avatar: "/student-avatar.png" },
-  { name: "Rona Free", percent: 97, avatar: "/student-avatar.png" },
-  { name: "Phil Gill", percent: 96, avatar: "/student-avatar.png" },
-  { name: "Angona", percent: 95, avatar: "/student-avatar.png" },
-  { name: "Greg Morrison", percent: 94, avatar: "/student-avatar.png" },
-  { name: "Sadia Rahman", percent: 93, avatar: "/student-avatar.png" },
-  { name: "Nayan Chowdhury", percent: 92, avatar: "/student-avatar.png" },
-  { name: "Mehedi Hasan", percent: 91, avatar: "/student-avatar.png" },
-  { name: "Arif Hossain", percent: 90, avatar: "/student-avatar.png" },
-  { name: "Tania Akter", percent: 89, avatar: "/student-avatar.png" },
+const leaderboardData: Array<{
+  name: string
+  percent: number
+  avatar?: string
+  district: string
+  division: string
+  subject: string
+}> = [
+  { name: "Larry Brown", percent: 98, avatar: "/student-avatar.png", district: "Dhaka", division: "Dhaka", subject: "Physics" },
+  { name: "Rona Free", percent: 97, avatar: "/student-avatar.png", district: "Chittagong", division: "Chittagong", subject: "Chemistry" },
+  { name: "Phil Gill", percent: 96, avatar: "/student-avatar.png", district: "Rajshahi", division: "Rajshahi", subject: "Biology" },
+  { name: "Angona", percent: 95, avatar: "/student-avatar.png", district: "Khulna", division: "Khulna", subject: "Higher Math" },
+  { name: "Greg Morrison", percent: 94, avatar: "/student-avatar.png", district: "Sylhet", division: "Sylhet", subject: "English" },
+  { name: "Sadia Rahman", percent: 93, avatar: "/student-avatar.png", district: "Barisal", division: "Barisal", subject: "Bangla" },
+  { name: "Nayan Chowdhury", percent: 92, avatar: "/student-avatar.png", district: "Rangpur", division: "Rangpur", subject: "ICT" },
+  { name: "Mehedi Hasan", percent: 91, avatar: "/student-avatar.png", district: "Mymensingh", division: "Mymensingh", subject: "History" },
+  { name: "Arif Hossain", percent: 90, avatar: "/student-avatar.png", district: "Dhaka", division: "Dhaka", subject: "Chemistry" },
+  { name: "Tania Akter", percent: 89, avatar: "/student-avatar.png", district: "Chittagong", division: "Chittagong", subject: "Physics" },
 ]
 
 export default function StudentReportCard() {
@@ -311,6 +321,60 @@ export default function StudentReportCard() {
   const [quarter, setQuarter] = useState<1 | 2 | 3>(1)
   const [quarterLabelSlide, setQuarterLabelSlide] = useState<"left" | "right" | null>(null)
   const extraSubjectsRef = useRef<HTMLDivElement | null>(null)
+  // Centralized leaderboard filters
+  const [filters, setFilters] = useState<{ division: string; district: string; subject: string }>({
+    division: "Overall",
+    district: "Overall",
+    subject: "Overall",
+  })
+
+  const districtOptions = [
+    "Overall",
+    "Dhaka",
+    "Chittagong",
+    "Rajshahi",
+    "Khulna",
+    "Sylhet",
+    "Barisal",
+    "Rangpur",
+    "Mymensingh",
+  ]
+  const divisionOptions = [
+    "Overall",
+    "Dhaka",
+    "Chittagong",
+    "Rajshahi",
+    "Khulna",
+    "Sylhet",
+    "Barisal",
+    "Rangpur",
+    "Mymensingh",
+  ]
+  const subjectOptions = ["Overall", ...Object.keys(subjectsData)]
+
+  // Dropdown visibility state per chip and outside-click handling
+  const [openChip, setOpenChip] = useState<null | "division" | "district" | "subject">(null)
+  const filterBarRef = useRef<HTMLDivElement | null>(null)
+
+  const filteredLeaderboard = leaderboardData.filter((item) => {
+    const districtOk = filters.district === "Overall" || item.district === filters.district
+    const divisionOk = filters.division === "Overall" || item.division === filters.division
+    const subjectOk = filters.subject === "Overall" || item.subject === filters.subject
+    return districtOk && divisionOk && subjectOk
+  })
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (!openChip) return
+      const container = filterBarRef.current
+      if (container && !container.contains(e.target as Node)) {
+        setOpenChip(null)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [openChip])
 
   useEffect(() => {
     const el = extraSubjectsRef.current
@@ -459,7 +523,7 @@ export default function StudentReportCard() {
             <>
               {/* Your Progress */}
               <section className="mt-8">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Progress</h2>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Progress Report</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gradient-to-br from-purple-300 to-purple-500 text-white rounded-2xl p-4 min-h-[140px] flex flex-col">
                     <div className="flex justify-between items-start mb-2">
@@ -554,6 +618,8 @@ export default function StudentReportCard() {
                 </div>
               </section>
 
+              
+
               {/* Subject-wise Performance (after Learning Stats) */}
               <section className="mt-8">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Subject-wise Performance</h2>
@@ -561,7 +627,7 @@ export default function StudentReportCard() {
                   <div className="grid grid-cols-[1.7fr_1fr_1fr] gap-4 text-xs font-medium text-gray-500 pb-3">
                     <span className="text-left">Subject</span>
                     <span className="text-center whitespace-nowrap">Your Score</span>
-                    <span className="text-center whitespace-nowrap">Topper's Score</span>
+                    <span className="text-center whitespace-nowrap">Topper's/Avg Score</span>
                   </div>
                   {(() => {
                     const entries = Object.entries(subjectsData)
@@ -642,6 +708,53 @@ export default function StudentReportCard() {
                 </div>
               </section>
 
+              {/* Focus Areas (below Subject-wise Performance) */}
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Focus Areas</h2>
+                <div className="rounded-2xl border border-purple-100 bg-purple-50 p-2 shadow-sm">
+                  <div className="bg-white rounded-xl divide-y divide-gray-100">
+                    <button type="button" className="w-full flex items-center justify-between p-3">
+                      <div className="flex items-center gap-3">
+                        <span className="w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+                          <Calendar className="w-5 h-5" />
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-extrabold text-gray-900">{quarterSummary[quarter].focus.missedClasses}</span>
+                          <span className="text-sm text-gray-600">Missed Classes</span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-300" />
+                    </button>
+
+                    <button type="button" className="w-full flex items-center justify-between p-3">
+                      <div className="flex items-center gap-3">
+                        <span className="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                          <XCircle className="w-5 h-5" />
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-extrabold text-gray-900">{quarterSummary[quarter].focus.incorrectMCQs}</span>
+                          <span className="text-sm text-gray-600">Incorrect Answers</span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-300" />
+                    </button>
+
+                    <button type="button" className="w-full flex items-center justify-between p-3">
+                      <div className="flex items-center gap-3">
+                        <span className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                          <PlayCircle className="w-5 h-5" />
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-extrabold text-gray-900">{quarterSummary[quarter].focus.recommendedVideos}</span>
+                          <span className="text-sm text-gray-600">Recommended Videos</span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-300" />
+                    </button>
+                  </div>
+                </div>
+              </section>
+
               {/* Performance Trend */}
               <section className="mt-8">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Performance Trend</h2>
@@ -654,9 +767,163 @@ export default function StudentReportCard() {
             <>
               {/* Leaderboard */}
               <section className="mt-8">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Leaderboard</h2>
-                <div className="rounded-2xl border border-purple-100 bg-purple-50 p-2 shadow-sm space-y-2">
-                  {leaderboardData.map((item, index) => (
+                {/* Filter Chip Bar */}
+                <div ref={filterBarRef} className="w-full">
+                  <div className="flex items-center justify-between gap-2 flex-nowrap">
+                    <div className="flex items-center gap-2 flex-nowrap">
+                      {/* Division Chip */}
+                <div className="relative">
+                        <button
+                    type="button"
+                          onClick={() => setOpenChip((c) => (c === "division" ? null : "division"))}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs transition-colors shadow ${
+                            filters.division !== "Overall"
+                              ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
+                              : "bg-gradient-to-r from-indigo-400 to-purple-500 text-white"
+                          }`}
+                        >
+                          <span className="whitespace-nowrap">
+                            {filters.division === "Overall" ? "Division" : `Division: ${filters.division}`}
+                      </span>
+                          <ChevronDown className="w-4 h-4 opacity-70" />
+                  </button>
+                        {openChip === "division" && (
+                          <div className="absolute left-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-md p-1 z-10">
+                            <div className="max-h-48 overflow-y-auto">
+                              {divisionOptions.map((opt) => (
+                          <button
+                                  key={opt}
+                            type="button"
+                                  onClick={() => {
+                                    setFilters((f) => ({ ...f, division: opt }))
+                                    setOpenChip(null)
+                                  }}
+                                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${
+                                    filters.division === opt ? "bg-purple-50 text-[#48319d] font-semibold" : "text-gray-700 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  {opt}
+                          </button>
+                        ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* District Chip */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setOpenChip((c) => (c === "district" ? null : "district"))}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs transition-colors shadow ${
+                            filters.district !== "Overall"
+                              ? "bg-gradient-to-r from-sky-500 to-cyan-600 text-white"
+                              : "bg-gradient-to-r from-sky-400 to-cyan-500 text-white"
+                          }`}
+                        >
+                          <span className="whitespace-nowrap">
+                            {filters.district === "Overall" ? "District" : `District: ${filters.district}`}
+                          </span>
+                          <ChevronDown className="w-4 h-4 opacity-70" />
+                        </button>
+                        {openChip === "district" && (
+                          <div className="absolute left-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-md p-1 z-10">
+                            <div className="max-h-48 overflow-y-auto">
+                          {districtOptions.map((opt) => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                    setFilters((f) => ({ ...f, district: opt }))
+                                    setOpenChip(null)
+                              }}
+                                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${
+                                    filters.district === opt ? "bg-purple-50 text-[#48319d] font-semibold" : "text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                            </div>
+                        </div>
+                      )}
+                      </div>
+
+                      {/* Subject Chip */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setOpenChip((c) => (c === "subject" ? null : "subject"))}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs transition-colors shadow ${
+                            filters.subject !== "Overall"
+                              ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white"
+                              : "bg-gradient-to-r from-amber-400 to-orange-500 text-white"
+                          }`}
+                        >
+                          <span className="whitespace-nowrap">
+                            {filters.subject === "Overall" ? "Subject" : `Subject: ${filters.subject}`}
+                          </span>
+                          <ChevronDown className="w-4 h-4 opacity-70" />
+                        </button>
+                        {openChip === "subject" && (
+                          <div className="absolute left-0 top-full mt-2 w-56 rounded-xl border border-gray-200 bg-white shadow-md p-1 z-10">
+                            <div className="max-h-48 overflow-y-auto">
+                              {subjectOptions.map((opt) => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                    setFilters((f) => ({ ...f, subject: opt }))
+                                    setOpenChip(null)
+                              }}
+                                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${
+                                    filters.subject === opt ? "bg-purple-50 text-[#48319d] font-semibold" : "text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                            </div>
+                        </div>
+                      )}
+                      </div>
+                    </div>
+
+                    {/* Clear Filters */}
+                    <button
+                                type="button"
+                      aria-label="Clear filters"
+                                onClick={() => {
+                        setFilters({ division: "Overall", district: "Overall", subject: "Overall" })
+                        setOpenChip(null)
+                      }}
+                      className="p-1.5 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    >
+                      <RefreshCcw className="w-4 h-4" />
+                              </button>
+                          </div>
+                        </div>
+
+                {/* User Rank banner when not in Top 10 */}
+                {(() => {
+                  const currentUser = "Angona"
+                  const idx = filteredLeaderboard.findIndex((x) => x.name === currentUser)
+                  if (idx > 9) {
+                    const user = filteredLeaderboard[idx]
+                    return (
+                      <div className="mt-4 rounded-xl p-3 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-amber-400 text-white shadow">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Your Rank</span>
+                          <span className="text-base font-bold">#{idx + 1} • {user.percent}%</span>
+                    </div>
+                </div>
+                    )
+                  }
+                  return null
+                })()}
+
+                <div className="rounded-2xl border border-purple-100 bg-purple-50 p-2 shadow-sm space-y-2 mt-4">
+                  {filteredLeaderboard.map((item, index) => (
                     <div
                       key={item.name}
                       className={`flex items-center justify-between p-3 rounded-xl ${
